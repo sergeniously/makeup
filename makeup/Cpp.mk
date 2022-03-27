@@ -50,58 +50,35 @@ $(foreach binary,$(call binary,$(1).o),\
 $(eval $(binary): $(1) Makefile)$(binary))
 endef
 
-# Macro add_library:
-#  generates rules to build and clean static or shared (or both) libraries
-# Example: $(call add_library, foo, STATIC SHARED, foo.cpp)
-
-SHARED_LIBRARY_RECIPE=$(CXX) $(LINK_OPTIONS) $$(filter %.o,$$^) $(LINK_LIBRARIES) -shared -o $$@
-SHARED_LIBRARY_SUFFIX=so
-
-STATIC_LIBRARY_RECIPE=$(AR) rcs $$@ $$(filter %.o,$$^)
-STATIC_LIBRARY_SUFFIX=a
-
-define add_library # (name, STATIC SHARED, sources ..., [DEPEND:target ...])
-$(foreach TYPE,$(2),$(foreach library,lib$(1).$($(TYPE)_LIBRARY_SUFFIX),$(eval \
-all: $(library)
-$(1) $(library): $(BINDIR)/$(library)
-$(BINDIR)/$(library): $(call add_sources,$(3)) $(call get_depends,$(4))
-	@ echo "$(COLOR_BUILD)Building $(TYPE) library: $$@$(COLOR_OFF)"
-	$($(TYPE)_LIBRARY_RECIPE)
-
-$(1)_TARGET_FILES += $(BINDIR)/$(library)
-
-# additional dependencies for objects
--include $(DEPEND_FILES)
-
-clean-$(1)::
-	rm -f $(BINDIR)/$(library) $(OBJECT_FILES) $(DEPEND_FILES)
-clean: clean-$(1)
-)))
+# Private macro to create static library
+define add_STATIC_library # (name, sources ..., options ...)
+$(call add_binary_target,$(1),lib$(1).a,$(2),Building static library,\
+$(AR) rcs $$@ $$(filter %.o,$$^),$(3))
 endef
 
-# Macro add_program:
+# Private macro to create shared library
+define add_SHARED_library # (name, sources ..., options ...)
+$(call add_binary_target,$(1),lib$(1).so,$(2),Building shared library,\
+$(CXX) $(LINK_OPTIONS) $$(filter %.o,$$^) $(LINK_LIBRARIES) -shared -o $$@,$(3))
+endef
+
+# Public macro add_library:
+#  generates rules to build and clean static or shared (or both) libraries
+# Example: $(call add_library, foo, STATIC SHARED, foo.cpp)
+define add_library # (name, STATIC SHARED, sources ..., options ...)
+$(foreach TYPE,$(filter STATIC SHARED,$(2)),$(call add_$(TYPE)_library,$(1),$(3),$(4)))
+endef
+
+# Public macro add_program:
 #  generates rules to build, run and clean executable program
 # Example: $(call add_program,bar,main.cpp,DEPEND:foo)
-define add_program # (name, sources ..., [DEPEND:target ...])
+define add_program # (name, sources ..., options ...)
+$(call add_binary_target,$(1),$(1),$(2),Building executable program,\
+$(CXX) $(LINK_OPTIONS) $$(filter %.o,$$^) $(LINK_LIBRARIES) -o $$@,$(3))\
 $(eval \
-all: $(1)
-$(1): $(BINDIR)/$(1)
-$(BINDIR)/$(1): $(call add_sources,$(2)) $(call get_depends,$(3))
-	@ echo "$(COLOR_BUILD)Building executable program: $$@$(COLOR_OFF)"
-	$(CXX) $(LINK_OPTIONS) $$(filter %.o,$$^) $(LINK_LIBRARIES) -o $$@
-
-$(1)_TARGET_FILES += $(BINDIR)/$(1)
-
-# additional dependencies for objects
--include $(DEPEND_FILES)
-
-clean-$(1)::
-	rm -f $(BINDIR)/$(1) $(OBJECT_FILES) $(DEPEND_FILES)
-clean: clean-$(1)
-
 # helper target to run a program
 run-$(1): $(BINDIR)/$(1)
-	cd $(BINDIR) && ./$(1)
+	$(BINDIR)/$(1)
 run: run-$(1)
 )
 endef

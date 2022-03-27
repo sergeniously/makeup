@@ -111,8 +111,7 @@ endef
 #  also defines OBJECT_FILES and DEPEND_FILES variables that contain added object files
 define add_sources
 $(eval OBJECT_FILES=$(foreach source,$(1),$(call add_source$(suffix $(source)),$(source))))\
-$(eval DEPEND_FILES=$(filter %.d,$(OBJECT_FILES:%.o=%.d)))\
-$(value OBJECT_FILES)
+$(eval DEPEND_FILES=$(filter %.d,$(OBJECT_FILES:%.o=%.d)))
 endef
 
 # Macro to get target files corresponding to already added @names targets
@@ -160,6 +159,40 @@ define link_libraries # (-options ... libraries ...)
 $(eval \
 LINK_LIBRARIES+=$(foreach lib,$(1),$(if $(filter %.a %.so -%,$(lib)),\
 $(if $(filter ../%,$(lib)),$(abspath $(BINDIR)/$(lib)),$(lib)),-l$(lib))))
+endef
+
+# Universal macro to create binary target file
+#  it is supposed to be used by concrete modules
+# Arguments:
+# $(1:name): a target name to aggregate target files
+# $(2:file): a basename of a file that will be created in BINDIR
+# $(3:sources): a list of prerequisite source files for target @file
+# $(4:comment): a comment to print of what is going to be done
+# $(5:command): a command to create binary target @file
+# $(6:options):
+#  [DEPEND:name ...]: additional dependency for target @file
+#  [EXCLUDE_FROM_ALL]: do not add target to default all target
+# Example: $(call add_binary_target,foo,libfoo.a,foo.cpp,Building static library,g++ $$^ -o $$@)
+define add_binary_target # (name, file, sources ..., comment, command, options ...)
+$(eval \
+# add rules for objects
+$(call add_sources,$(3))
+# add dependencies for objects
+-include $(DEPEND_FILES)
+
+$(2): $(BINDIR)/$(2)
+$(BINDIR)/$(2): $(OBJECT_FILES) $(call get_depends,$(6))
+	@ echo "$(COLOR_BUILD)$(or $(4),Building binary file): $$@$(COLOR_OFF)"
+	$(or $(5),$(error command is not provided for $(1)))
+
+$(if $(filter EXCLUDE_FROM_ALL,$(2)),,all: $(2))
+
+clean-$(1)::
+	rm -f $(BINDIR)/$(2) $(OBJECT_FILES) $(DEPEND_FILES)
+clean: clean-$(1)
+
+$(1)_TARGET_FILES += $(BINDIR)/$(2)
+)
 endef
 
 # Macro add_dependencies:
