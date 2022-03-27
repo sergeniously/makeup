@@ -12,15 +12,10 @@ CURRENT_SOURCE_DIR=$(CURDIR)
 CURRENT_BINARY_DIR=$(ROOT_BINARY_DIR)$(CURDIR:$(ROOT_SOURCE_DIR)%=%)
 
 # Default install directory
-INSTALL_DIR:=$(or $(DESTDIR),$(ROOT_SOURCE_DIR)/install)
+ROOT_INSTALL_DIR:=$(or $(DESTDIR),$(ROOT_SOURCE_DIR)/install)
 
-# Compiling & building applications
+# Define common building applications
 # in case they are not set or empty
-# May be overrided in makeup.pj
-AR:=$(or $(AR),ar)
-CC:=$(or $(CC),gcc)
-CXX:=$(or $(CXX),g++)
-LD:=$(or $(LD),ld)
 STRIP:=$(or $(STRIP),strip)
 MAKE:=$(or $(MAKE),make)
 
@@ -112,37 +107,12 @@ endef
 
 # Macro to add rules to build objects from sources
 #  for each source file it calls appropriate macro according to its suffix
-#  for example, for c file it calls add_c_source macro implemented in Cpp module
-#  also defines OBJECT_FILES and DEPEND_FILES variables that contain all object files
+#  for example, for *.c file it calls add_source.c macro implemented in Cpp module
+#  also defines OBJECT_FILES and DEPEND_FILES variables that contain added object files
 define add_sources
-$(eval OBJECT_FILES=$(foreach source,$(1),$(call add_$(subst .,,$(suffix $(source)))_source,$(source))))\
+$(eval OBJECT_FILES=$(foreach source,$(1),$(call add_source$(suffix $(source)),$(source))))\
 $(eval DEPEND_FILES=$(filter %.d,$(OBJECT_FILES:%.o=%.d)))\
 $(value OBJECT_FILES)
-endef
-
-# Adds compile options as is
-define add_compile_options
-$(eval \
-CXXFLAGS+=$(1)
-CFLAGS+=$(1)
-)
-endef
-
-# Macro to add definitions for compiler in NAME[=VALUE] form
-#  do not add them with -D prefixes as so they added automatically
-define add_definitions # (DEFINES ...)
-$(eval \
-CXXFLAGS+=$(1:%=-D%)
-CFLAGS+=$(1:%=-D%)
-)
-endef
-
-# Macro to add directories to search include files by compiler
-define include_directories # (paths ...)
-$(eval \
-CXXFLAGS+=$(1:%=-I%)
-CFLAGS+=$(1:%=-I%)
-)
 endef
 
 # Macro to get target files corresponding to already added @names targets
@@ -154,6 +124,42 @@ endef
 # Macro to extract dependency target files or names from a list of options
 define get_depends # (options ...)
 $(foreach name,$(call opt_all,$(1),DEPEND:%),$(or $(call get_targets,$(name)),$(name)))
+endef
+
+# Adds compile options as is
+define add_compile_options
+$(eval COMPILE_OPTIONS+=$(1))
+endef
+
+# Macro to add definitions for compiler in NAME[=VALUE] form
+#  do not add them with -D prefixes as so they added automatically
+define add_definitions # (DEFINES ...)
+$(eval COMPILE_OPTIONS+=$(1:%=-D%))
+endef
+
+# Macro to add directories to search include files by compiler
+define include_directories # (paths ...)
+$(eval COMPILE_OPTIONS+=$(1:%=-I%))
+endef
+
+# Adds link options as is
+define add_link_options
+$(eval LINK_OPTIONS+=$(1))
+endef
+
+# Macro to add directories to search libraries by linker
+define link_directories # (paths ...)
+$(eval LINK_OPTIONS+=$(1:%=-L%) -Wl,-rpath,$(subst $() $(),:,$(1)))
+endef
+
+# Macro to link libraries or options
+#  adds explicitly linked libraries (*.a *.so) or options (-*) as is
+#  also appends binary path to those which have relative specifier
+#  example: $(call link_libraries,boost_system -l:libzip.a)
+define link_libraries # (-options ... libraries ...)
+$(eval \
+LINK_LIBRARIES+=$(foreach lib,$(1),$(if $(filter %.a %.so -%,$(lib)),\
+$(if $(filter ../%,$(lib)),$(abspath $(BINDIR)/$(lib)),$(lib)),-l$(lib))))
 endef
 
 # Macro add_dependencies:
@@ -228,51 +234,6 @@ install: install-$(1)
 clean-$(1):
 	@ $(MAKE) -C $(call opt_one,$(2),DIR:%,,$(1)) clean
 clean: clean-$(1)
-)
-endef
-
-# Adds link options as is
-define add_link_options
-$(eval \
-LDFLAGS+=$(1)
-)
-endef
-
-# Macro to add directories to search libraries by linker
-define link_directories # (paths ...)
-$(eval \
-LDFLAGS+=$(foreach path,$(1),-L$(path) -Wl,-rpath $(path))
-)
-endef
-
-# Macro to link libraries or options
-#  adds explicitly linked libraries (*.a *.so) or options (-*) as is
-#  also appends binary path to those which have relative specifier
-#  example: $(call link_libraries,boost_system -l:libzip.a)
-define link_libraries # (-options ... libraries ...)
-$(eval \
-LDLIBS+=$(foreach lib,$(1),$(if $(filter %.a %.so -%,$(lib)),\
-$(if $(filter ../%,$(lib)),$(abspath $(BINDIR)/$(lib)),$(lib)),-l$(lib)))
-)
-endef
-
-# Macro find_libraries helps to group individual library variables into one variable
-#  it uses variables $(<NAME>_INCLUDE_DIR), $(<NAME>_LIBRARY_DIR) and $(<NAME>_LIBRARIES) defined in makeup.pj
-#  and adds them into three vaiables $(<VAR>_INCLUDE_DIR), $(<VAR>_LIBRARY_DIR) and $(<VAR>_LIBRARIES)
-# For example, instead of using many individual library variables like:
-#  $(call include_directories,$(BOOST_INCLUDE_DIR) $(OPENSSL_INCLUDE_DIR) ...)
-#  $(call link_directories,$(BOOST_LIBRARY_DIR) $(OPENSSL_LIBRARY_DIR) ...)
-#  $(call link_libraries,$(BOOST_LIBRARY_DIR) $(OPENSSL_LIBRARY_DIR) ...)
-# it is better use next constructions:
-#  $(call find_libraries,ALL,BOOST OPENSSL ...)
-#  $(call include_directories,$(ALL_INCLUDE_DIR))
-#  $(call link_directories,$(ALL_LIBRARY_DIR))
-#  $(call link_libraries,$(ALL_LIBRARIES))
-define find_libraries # (VAR, NAME ...)
-$(eval \
-$(1)_INCLUDE_DIR:=$(2:%=$$(%_INCLUDE_DIR))
-$(1)_LIBRARY_DIR:=$(2:%=$$(%_LIBRARY_DIR))
-$(1)_LIBRARIES:=$(2:%=$$(%_LIBRARIES))
 )
 endef
 

@@ -1,4 +1,3 @@
-#include <cstdio>
 #include <az-json/Writer.h>
 
 int main(int argn, const char** argv)

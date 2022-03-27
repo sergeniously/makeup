@@ -1,14 +1,24 @@
 #####################
 # C/Cpp makeup module
 
+# Compiling & linking Cpp applications
+# in case they are not set or empty
+AR:=$(or $(AR),ar)
+CC:=$(or $(CC),gcc)
+CXX:=$(or $(CXX),g++)
+
+# Add environment link options if they are provided
+LINK_OPTIONS+=$(LDFLAGS)
+LINK_LIBRARIES+=$(LDLIBS)
+
 # Rules to build c/cpp object files
 $(BINDIR)/%.c.o: | $(BINDIR)
 	@ echo "$(COLOR_COMPILE)Compiling C-file: $(abspath $<)$(COLOR_OFF)"
-	$(CC) $(CFLAGS) -MMD -o $@ -c $(abspath $<)
+	$(CC) $(CFLAGS) $(COMPILE_OPTIONS) -MMD -o $@ -c $(abspath $<)
 
 $(BINDIR)/%.cpp.o: | $(BINDIR)
 	@ echo "$(COLOR_COMPILE)Compiling CPP-file: $(abspath $<)$(COLOR_OFF)"
-	$(CXX) $(CXXFLAGS) -MMD -o $@ -c $(abspath $<)
+	$(CXX) $(CXXFLAGS) $(COMPILE_OPTIONS) -MMD -o $@ -c $(abspath $<)
 
 # Macro check_c_compiler_flag(flag)
 # Macro check_cxx_compiler_flag(flag)
@@ -30,12 +40,12 @@ define set_cxx_standard # (standard)
 $(eval CXXFLAGS:=-std=$(1) $(filter-out -std=%,$(CXXFLAGS)))
 endef
 
-define add_c_source
+define add_source.c
 $(foreach binary,$(call binary,$(1).o),\
 $(eval $(binary): $(1) Makefile)$(binary))
 endef
 
-define add_cpp_source
+define add_source.cpp
 $(foreach binary,$(call binary,$(1).o),\
 $(eval $(binary): $(1) Makefile)$(binary))
 endef
@@ -44,7 +54,7 @@ endef
 #  generates rules to build and clean static or shared (or both) libraries
 # Example: $(call add_library, foo, STATIC SHARED, foo.cpp)
 
-SHARED_LIBRARY_RECIPE=$(CXX) $(LDFLAGS) $$(filter %.o,$$^) $(LDLIBS) -shared -o $$@
+SHARED_LIBRARY_RECIPE=$(CXX) $(LINK_OPTIONS) $$(filter %.o,$$^) $(LINK_LIBRARIES) -shared -o $$@
 SHARED_LIBRARY_SUFFIX=so
 
 STATIC_LIBRARY_RECIPE=$(AR) rcs $$@ $$(filter %.o,$$^)
@@ -78,7 +88,7 @@ all: $(1)
 $(1): $(BINDIR)/$(1)
 $(BINDIR)/$(1): $(call add_sources,$(2)) $(call get_depends,$(3))
 	@ echo "$(COLOR_BUILD)Building executable program: $$@$(COLOR_OFF)"
-	$(CXX) $(LDFLAGS) $$(filter %.o,$$^) $(LDLIBS) -o $$@
+	$(CXX) $(LINK_OPTIONS) $$(filter %.o,$$^) $(LINK_LIBRARIES) -o $$@
 
 $(1)_TARGET_FILES += $(BINDIR)/$(1)
 
@@ -91,7 +101,7 @@ clean: clean-$(1)
 
 # helper target to run a program
 run-$(1): $(BINDIR)/$(1)
-	$(BINDIR)/$(1)
+	cd $(BINDIR) && ./$(1)
 run: run-$(1)
 )
 endef

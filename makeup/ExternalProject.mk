@@ -5,11 +5,12 @@
 # Directories to download, extract and build external projects
 # Should be defined in project makeup.pj file
 EPARC?=$(ROOT_BINARY_DIR)/EP/archives
-EPINC?=$(ROOT_BINARY_DIR)/EP/include
 EPSRC?=$(ROOT_BINARY_DIR)/EP/sources
+EPINC?=$(ROOT_BINARY_DIR)/EP/include
+EPBIN?=$(ROOT_BINARY_DIR)/EP/binary
 EPLOG?=$(ROOT_BINARY_DIR)/EP/logs
 
-$(EPARC) $(EPINC) $(EPLOG):
+$(EPARC) $(EPINC) $(EPBIN) $(EPLOG):
 	mkdir -p $@
 $(EPSRC)/%:
 	mkdir -p $@
@@ -21,8 +22,9 @@ $(EPSRC)/%:
 #  @MD5:HASH: specifies MD5 checksum to verify the archive file after downloading
 #  @DEPEND:name: specifies dependency target of the external project (can be multiply specified)
 #  @INCLUDE:dir: specifies a relative path to include directory to create a symbolic link in $(EPINC)
+#  @BINARY:path: specifies a relative path with wildcard pattern to binaries that must be moved to $(EPBIN) after building
 # TODO: add URL and FILE options to download an archive or just extract existent one
-define add_external_project # (name, url, [MD5:HASH] [DEPEND:name ...] [INCLUDE:dir])
+define add_external_project # (name, url, [MD5:HASH] [DEPEND:name ...] [INCLUDE:dir] [BINARY:dir/lib* ...])
 $(eval \
 all: $(1)
 $(1): $(EPLOG)/$(1).timestamp
@@ -32,6 +34,7 @@ $(EPLOG)/$(1).timestamp: $(call get_depends,$(3))
 	@ +$(MAKE) build-$(1) || { cat $(EPLOG)/$(1).log; \
 		echo "$(COLOR_ERROR)Failed to build external project: $(1)$(COLOR_OFF)"; \
 		false; } # if building fails print complete log and do not touch
+	$(foreach path,$(call opt_all,$(3),BINARY:%),cp -f $(EPSRC)/$(1)/$(path) $(EPBIN)$(NEWLINE)$(TAB))
 	@ touch $(EPLOG)/$(1).timestamp
 
 $(1)_TARGET_FILES+=$(EPLOG)/$(1).timestamp
@@ -39,7 +42,7 @@ $(1)_TARGET_FILES+=$(EPLOG)/$(1).timestamp
 build-$(1): configure-$(1)
 configure-$(1): patch-$(1)
 patch-$(1): download-$(1)
-download-$(1): clean-$(1) | $(EPARC) $(EPINC) $(EPLOG) $(EPSRC)/$(1)
+download-$(1): clean-$(1) | $(EPARC) $(EPINC) $(EPBIN) $(EPLOG) $(EPSRC)/$(1)
 	@ echo "$(COLOR_EXTERNAL)Downloading external project: $(1)$(COLOR_OFF)"
 	wget --timestamping --directory-prefix=$(EPARC) --output-file=$(EPLOG)/$(1).log $(2)
 	@# optionally match MD5 checksum of downloaded archive with specified MD5 checksum
@@ -53,6 +56,7 @@ download: download-$(1)
 clean-$(1): # do verbose only if timestamp exists
 	@ $(if $(wildcard $(EPLOG)/$(1).timestamp),echo "Cleaning external project: $(1)")
 	rm -rf $(EPARC)/$(notdir $(2)) $(EPSRC)/$(1) $(EPLOG)/$(1).log $(EPLOG)/$(1).timestamp
+	$(foreach file,$(notdir $(call opt_all,$(3),BINARY:%)),rm -f $(EPBIN)/$(file)$(NEWLINE)$(TAB))
 	$(call opt_one,$(3),INCLUDE:%,rm -f $(EPINC)/$(1))
 clean: clean-$(1)
 )

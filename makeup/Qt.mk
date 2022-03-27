@@ -47,19 +47,19 @@ install: install-translations
 ))
 endef
 
-define add_h_source
+define add_source.h
 $(foreach binary,$(call binary,$(1).cpp),\
 $(eval $(binary): $(1))$(eval $(binary).o: $(binary) Makefile)\
 $(binary) $(binary).o)
 endef
 
-define add_qrc_source
+define add_source.qrc
 $(foreach binary,$(call binary,$(1).cpp),\
 $(eval $(binary): $(1))$(eval $(binary).o: $(binary) Makefile)\
 $(binary) $(binary).o)
 endef
 
-define add_ui_source
+define add_source.ui
 $(foreach binary,$(call binary,$(patsubst %.ui,ui_%.h,$(notdir $(1)))),\
 $(eval $(binary): $(1))$(binary))
 endef
