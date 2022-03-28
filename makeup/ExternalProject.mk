@@ -10,11 +10,6 @@ EPINC?=$(ROOT_BINARY_DIR)/EP/include
 EPBIN?=$(ROOT_BINARY_DIR)/EP/binary
 EPLOG?=$(ROOT_BINARY_DIR)/EP/logs
 
-$(EPARC) $(EPINC) $(EPBIN) $(EPLOG):
-	mkdir -p $@
-$(EPSRC)/%:
-	mkdir -p $@
-
 # Macro add_external_project:
 #  adds a target to download, verify and extract external project sources into $(EPSRC) directory
 #  additional targets to patch, configure and build need to be added by another macros below
@@ -39,22 +34,23 @@ $(EPLOG)/$(1).timestamp: $(call get_depends,$(3))
 
 $(1)_TARGET_FILES+=$(EPLOG)/$(1).timestamp
 
-build-$(1): configure-$(1)
-configure-$(1): patch-$(1)
-patch-$(1): download-$(1)
-download-$(1): clean-$(1) | $(EPARC) $(EPINC) $(EPBIN) $(EPLOG) $(EPSRC)/$(1)
+build-$(1):: configure-$(1)
+configure-$(1):: patch-$(1)
+patch-$(1):: download-$(1)
+download-$(1): clean-$(1)
+	mkdir -p $(EPARC) $(EPINC) $(EPBIN) $(EPLOG) $(EPSRC)/$(1)
 	@ echo "$(COLOR_EXTERNAL)Downloading external project: $(1)$(COLOR_OFF)"
 	wget --timestamping --directory-prefix=$(EPARC) --output-file=$(EPLOG)/$(1).log $(2)
 	@# optionally match MD5 checksum of downloaded archive with specified MD5 checksum
 	$(call opt_one,$(3),MD5:%,echo %\ \ $(EPARC)/$(notdir $(2)) | md5sum --check >> $(EPLOG)/$(1).log 2>&1)
 	$(if $(filter %.tar.gz,$(2)),tar --extract --file=$(EPARC)/$(notdir $(2)) --directory=$(EPSRC)/$(1) --strip-components=1)
-	$(if $(filter %.zip,$(2)),unzip -q -d $(EPSRC)/$(1) $(EPARC)/$(notdir $(2)))	
+	$(if $(filter %.zip,$(2)),unzip -q -d $(EPSRC)/$(1) $(EPARC)/$(notdir $(2)))
 	@# optionally create symbolic link to include directory of the external project
 	$(call opt_one,$(3),INCLUDE:%,ln -sf $(EPSRC)/$(1)/% $(EPINC)/$(1))
 download: download-$(1)
 
 clean-$(1): # do verbose only if timestamp exists
-	@ $(if $(wildcard $(EPLOG)/$(1).timestamp),echo "Cleaning external project: $(1)")
+	@ test -f $(EPLOG)/$(1).timestamp && echo "Cleaning external project: $(1)" || true
 	rm -rf $(EPARC)/$(notdir $(2)) $(EPSRC)/$(1) $(EPLOG)/$(1).log $(EPLOG)/$(1).timestamp
 	$(foreach file,$(notdir $(call opt_all,$(3),BINARY:%)),rm -f $(EPBIN)/$(file)$(NEWLINE)$(TAB))
 	$(call opt_one,$(3),INCLUDE:%,rm -f $(EPINC)/$(1))
@@ -63,58 +59,46 @@ clean: clean-$(1)
 endef
 
 # Macro patch_external_project:
-#  adds optional target to perform patching step
+#  appends a command to patch external project
 # Example: $(call patch_external_project,foo,patch main.coo foo.patch)
-define patch_external_project # (name, command1, ..., command4)
+define patch_external_project # (name, command ..., comment ...)
 $(eval \
-patch-$(1):
-	@ echo "$(COLOR_EXTERNAL)Patching external project: $(1)$(COLOR_OFF)"
-	$(if $(2),cd $(EPSRC)/$(1) && $(2))
-	$(if $(3),cd $(EPSRC)/$(1) && $(3))
-	$(if $(4),cd $(EPSRC)/$(1) && $(4))
-	$(if $(5),cd $(EPSRC)/$(1) && $(5))
+patch-$(1)::
+	@ echo "$(COLOR_EXTERNAL)Patching external project: $(1)$(if $(3),($(3)))$(COLOR_OFF)"
+	cd $(EPSRC)/$(1) && ($(2)) >> $(EPLOG)/$(1).log 2>&1
 )
 endef
 
 # Macro configure_external_project:
-#  adds optional target to perform configuring step
+#  appends a command to configure external project
 # Example: $(call configure_external_project,foo,./configure)
-define configure_external_project # (name, command1, ..., command4)
+define configure_external_project # (name, command ..., comment ...)
 $(eval \
-configure-$(1):
-	@ echo "$(COLOR_EXTERNAL)Configuring external project: $(1)$(COLOR_OFF)"
-	$(if $(2),cd $(EPSRC)/$(1) && $(2) >> $(EPLOG)/$(1).log 2>&1)
-	$(if $(3),cd $(EPSRC)/$(1) && $(3) >> $(EPLOG)/$(1).log 2>&1)
-	$(if $(4),cd $(EPSRC)/$(1) && $(4) >> $(EPLOG)/$(1).log 2>&1)
-	$(if $(5),cd $(EPSRC)/$(1) && $(5) >> $(EPLOG)/$(1).log 2>&1)
+configure-$(1)::
+	@ echo "$(COLOR_EXTERNAL)Configuring external project: $(1)$(if $(3),($(3)))$(COLOR_OFF)"
+	cd $(EPSRC)/$(1) && ($(2)) >> $(EPLOG)/$(1).log 2>&1
 )
 endef
 
 # Macro build_external_project:
-#  adds optional target to perform building step
+#  appends a command to build external project
 # Example: $(call build_external_project,foo,make all)
-define build_external_project # (name, command1, ..., command4)
+define build_external_project # (name, command ..., comment ...)
 $(eval \
-build-$(1):
-	@ echo "$(COLOR_EXTERNAL)Building external project: $(1)$(COLOR_OFF)"
-	$(if $(2),cd $(EPSRC)/$(1) && $(2) >> $(EPLOG)/$(1).log 2>&1)
-	$(if $(3),cd $(EPSRC)/$(1) && $(3) >> $(EPLOG)/$(1).log 2>&1)
-	$(if $(4),cd $(EPSRC)/$(1) && $(4) >> $(EPLOG)/$(1).log 2>&1)
-	$(if $(5),cd $(EPSRC)/$(1) && $(5) >> $(EPLOG)/$(1).log 2>&1)
+build-$(1)::
+	@ echo "$(COLOR_EXTERNAL)Building external project: $(1)$(if $(3),($(3)))$(COLOR_OFF)"
+	cd $(EPSRC)/$(1) && ($(2)) >> $(EPLOG)/$(1).log 2>&1
 )
 endef
 
 # Macro install_external_project:
-#  adds optional target to install goods of external project on <make install> command
+#  appends a command to install external project on <make install>
 # Example: $(call install_external_project,foo,install libfoo.so $(DESTDIR))
-define install_external_project # (name, command1, ..., command4)
+define install_external_project # (name, command ..., comment ...)
 $(eval \
-install-$(1):
-	@ echo "$(COLOR_INSTALL)Installing external project: $(1)$(COLOR_OFF)"
-	$(if $(2),cd $(EPSRC)/$(1) && $(2) >> $(EPLOG)/$(1).log)
-	$(if $(3),cd $(EPSRC)/$(1) && $(3) >> $(EPLOG)/$(1).log)
-	$(if $(4),cd $(EPSRC)/$(1) && $(4) >> $(EPLOG)/$(1).log)
-	$(if $(5),cd $(EPSRC)/$(1) && $(5) >> $(EPLOG)/$(1).log)
+install-$(1)::
+	@ echo "$(COLOR_INSTALL)Installing external project: $(1)$(if $(3),($(3)))$(COLOR_OFF)"
+	cd $(EPSRC)/$(1) && ($(2)) >> $(EPLOG)/$(1).log
 install: install-$(1)
 )
 endef
