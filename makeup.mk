@@ -22,6 +22,7 @@ MAKE:=$(or $(MAKE),make)
 # Variables for colorful output
 # May be overrided in makeup.pj
 ifeq ($(shell tput colors 2>/dev/null),256)
+COLOR_INFO=\033[01;37m# Bold white
 COLOR_ERROR?=\033[01;31m# Bold red
 COLOR_BUILD?=\033[01;32m# Bold green
 COLOR_COMPILE?=\033[0;32m# Plain green
@@ -65,6 +66,19 @@ show-built: # informative target to show current built binaries
 $(CURRENT_BINARY_DIR):
 	mkdir -p $@
 
+define help # (target, comment ...)
+@ echo "> $(COLOR_INFO)make $(1)$(COLOR_OFF)"; echo "    $(strip $(2))"
+endef
+
+help::
+	@ echo "Use some of the following commands for current directory:"
+	$(call help,all,Building everything that can be built (default target))
+	$(call help,clean,Deleting everything that was built for current directory)
+	$(call help,install DESTDIR=dir (default: $(ROOT_INSTALL_DIR)),Installing built target files in DESTDIR directory)
+	$(call help,check,Running test targets if there are such ones)
+	$(call help,show-built,Printing all built files for current and subdirectories)
+
+
 # Macro find_program(names ..., paths ..., [REQUIRED] [RECURSIVE])
 #  searches executable @names in @paths or in system $PATH and return one found variant
 #  if REQUIRED option specified and program is not found it generates an error and stops working
@@ -84,16 +98,59 @@ define join_with # (splitter, words)
 $(subst $() $(),$(1),$(strip $(2)))
 endef
 
+ifeq ($(shell which tr),)
+# Macros to natively convert text to uppercase/lowercase forms
+alphabet=a b c d e f g h i j k l m n o p q r s t u v w x y z
+ALPHABET=A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+
+define uppercase
+$(strip $(eval _=$(1))\
+$(foreach N,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26,\
+$(eval _=$(subst $(word $(N),$(alphabet)),$(word $(N),$(ALPHABET)),$(_))))$(_))
+endef
+define lowercase
+$(strip $(eval _=$(1))\
+$(foreach N,1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26,\
+$(eval _=$(subst $(word $(N),$(ALPHABET)),$(word $(N),$(alphabet)),$(_))))$(_))
+endef
+else # short versions of macros that use tr utility
+define uppercase
+$(shell echo "$(1)" | tr [a-z] [A-Z])
+endef
+define lowercase
+$(shell echo "$(1)" | tr [A-Z] [a-z])
+endef
+endif
+
 # Extract all values of options with specified @pattern
-#  example: $(call opt_all, DIR:foo DEPEND:bar DEPEND:tar, DEPEND:%) -> bar tar
+# Example: $(call opt_all, FILE:one FILE:two, FILE:%, rm -f %) -> rm -f one two
 define opt_all # (options ..., pattern, [replace])
-$(patsubst $(2),$(or $(3),%),$(filter $(2),$(1)))
+$(subst %,$(patsubst $(2),%,$(filter $(2),$(1))),$(or $(3),%))
 endef
 
 # Extract the first value of options with specified @pattern
-#  example: $(call opt_one, MODE:123 DIR:any, MODE:%, -m %) -> -m 123
+# Example: $(call opt_one, MODE:123 DIR:any, MODE:%, -m %) -> -m 123
 define opt_one # (options ..., pattern, [replace], [default])
 $(or $(patsubst $(2),$(or $(3),%),$(firstword $(filter $(2),$(1)))),$(4))
+endef
+
+# Return @replace string if @pattern is not found in @options
+# Example: $(call opt_not, DIR:one DEPEND:two, EXCLUDE, YES) -> YES
+# Example: $(call opt_not, DEPEND:two EXCLUDE, EXCLUDE, YES) -> 
+define opt_not # (options ..., pattern, replace)
+$(if $(filter $(2),$(1)),,$(3))
+endef
+
+# Extract all values of options with specified @pattern
+# Example: $(call opt_all, FILE:one FILE:two, FILE:%, --file=%) -> --file=one --file=two
+define opt_each # (options ..., pattern, [replace])
+$(patsubst $(2),$(or $(3),%),$(filter $(2),$(1)))
+endef
+
+# Extract lists of values separated by colon from options with specified pattern
+# Example: $(call opt_list, FILES:one;two;tri, FILES:%, cp -f %) -> cp -f one two tri
+define opt_list # (options ..., pattern, [replace])
+$(subst %,$(subst ;, ,$(patsubst $(2),%,$(filter $(2),$(1)))),$(or $(3),%))
 endef
 
 # For concise usage below
@@ -185,11 +242,14 @@ $(BINDIR)/$(2): $(OBJECT_FILES) $(call get_depends,$(6))
 	@ echo "$(COLOR_BUILD)$(or $(4),Building binary file): $$@$(COLOR_OFF)"
 	$(or $(5),$(error command is not provided for $(1)))
 
-$(if $(filter EXCLUDE_FROM_ALL,$(2)),,all: $(2))
+$(call opt_not,$(6),EXCLUDE_FROM_ALL,all: $(2))
 
 clean-$(1)::
 	rm -f $(BINDIR)/$(2) $(OBJECT_FILES) $(DEPEND_FILES)
 clean: clean-$(1)
+
+help::
+	$(call help,$(2),$(or $(4),Building binary file) $(BINDIR)/$(2))
 
 $(1)_TARGET_FILES += $(BINDIR)/$(2)
 )
@@ -248,26 +308,29 @@ endef
 
 # Macro to build sub directory target
 define add_subdir_target # (name, [DIR:dir] [DEPEND:name ...] [EXCLUDE_FROM_ALL])
-$(eval \
+$(foreach directory,$(call opt_one,$(2),DIR:%,%,$(1)),$(eval \
 .PHONY: $(1) # in case a name matches a dir name
 
-$(if $(filter EXCLUDE_FROM_ALL,$(2)),,all: $(1))
+$(call opt_not,$(2),EXCLUDE_FROM_ALL,all: $(1))
 
 $(1): $(call opt_all,$(2),DEPEND:%)
-	@+ $(MAKE) -C $(call opt_one,$(2),DIR:%,,$(1)) all
+	@+ $(MAKE) -C $(directory) all
 
 check-$(1):
-	@ $(MAKE) -C $(call opt_one,$(2),DIR:%,,$(1)) check
+	@ $(MAKE) -C $(directory) check
 check: check-$(1)
 
 install-$(1):
-	@ $(MAKE) -C $(call opt_one,$(2),DIR:%,,$(1)) install
+	@ $(MAKE) -C $(directory) install
 install: install-$(1)
 
 clean-$(1):
-	@ $(MAKE) -C $(call opt_one,$(2),DIR:%,,$(1)) clean
+	@ $(MAKE) -C $(directory) clean
 clean: clean-$(1)
-)
+
+help::
+	$(call help,$(1),Building default target in subdirectory <$(directory)>)
+))
 endef
 
 # Macro to add rule to install target files of target @names in @destination

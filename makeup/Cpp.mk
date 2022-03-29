@@ -77,8 +77,11 @@ $(call add_binary_target,$(1),$(1),$(2),Building executable program,\
 $(CXX) $(LINK_OPTIONS) $$(filter %.o,$$^) $(LINK_LIBRARIES) -o $$@,$(3))\
 $(eval \
 # helper target to run a program
-run-$(1): $(BINDIR)/$(1)
-	$(BINDIR)/$(1)
+run-$(1):
+	$(BINDIR)/$(1) $(ARGS)
 run: run-$(1)
+
+help::
+	$(call help,run-$(1) ARGS='...',Running $(1) program with arguments specified by ARGS variable)
 )
 endef

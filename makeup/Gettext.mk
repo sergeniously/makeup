@@ -41,6 +41,9 @@ $(pot_file): $(3)
 clean-$(1):
 	rm -f $(pot_file)
 clean: clean-$(1)
+
+help::
+	$(call help,$(1),Generating PO translation file $(2))
 ))
 endef
 

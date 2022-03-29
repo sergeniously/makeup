@@ -10,6 +10,10 @@ EPINC?=$(ROOT_BINARY_DIR)/EP/include
 EPBIN?=$(ROOT_BINARY_DIR)/EP/binary
 EPLOG?=$(ROOT_BINARY_DIR)/EP/logs
 
+help::
+	$(call help,download EPSRC=dir (default: $(EPSRC)),\
+		Downloading and extracting all external projects in EPSRC directory)
+
 # Macro add_external_project:
 #  adds a target to download, verify and extract external project sources into $(EPSRC) directory
 #  additional targets to patch, configure and build need to be added by another macros below
@@ -55,6 +59,9 @@ clean-$(1): # do verbose only if timestamp exists
 	$(foreach file,$(notdir $(call opt_all,$(3),BINARY:%)),rm -f $(EPBIN)/$(file)$(NEWLINE)$(TAB))
 	$(call opt_one,$(3),INCLUDE:%,rm -f $(EPINC)/$(1))
 clean: clean-$(1)
+
+help::
+	$(call help,$(1),Building external project: $(1) ($(2)))
 )
 endef
 

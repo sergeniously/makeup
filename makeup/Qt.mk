@@ -11,7 +11,7 @@ QT_INCLUDE_DIR:=$(shell $(QMAKE) -query QT_INSTALL_HEADERS)
 QT_LIBRARY_DIR:=$(shell $(QMAKE) -query QT_INSTALL_LIBS)
 QT_BINARY_DIR:=$(shell $(QMAKE) -query QT_INSTALL_BINS)
 QT_DEFINITIONS:=QT_DEPRECATED_WARNINGS QT_NO_DEBUG \
-	$(shell echo $(1:%=QT_%_LIB) | tr [:lower:] [:upper:])
+	$(call uppercase,$(1:%=QT_%_LIB))
 ))$(eval \
 QT_INCLUDE_DIR+=$(1:%=$(QT_INCLUDE_DIR)/Qt%)
 QT_LIBRARIES:=$(1:%=Qt$(QT_VERSION)%)
