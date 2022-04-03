@@ -37,14 +37,13 @@ clean: clean-$(1)
 )$(target))
 endef
 
-# Macro to compile ts translation files into one qm file and save it in @destination
-define install_qt_translations # (ts-files ..., destination)
-$(foreach target,$(basename $(notdir $(firstword $(1)))),$(eval \
-install-translations::
-	@ echo "$(COLOR_INSTALL)Installing Qt translation file $(target).qm in $(2) ...$(COLOR_OFF)";
-	mkdir -p $(2) && $(QT_LRELEASE) $(1) -qm $(2)/$(target).qm
-install: install-translations
-))
+# Macro to compile ts translation file into qm file and save it in @destination
+define install_qt_translation # (ts-file, destination)
+$(eval \
+install:: $(1)
+	@ echo "$(COLOR_INSTALL)Installing Qt translation file $$(<F) in $(2) ...$(COLOR_OFF)";
+	mkdir -p $(2) && $(QT_LRELEASE) $(1) -qm $(2)/$$(basename $$(<F)).qm
+)
 endef
 
 define add_source.h

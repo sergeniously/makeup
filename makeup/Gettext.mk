@@ -49,9 +49,8 @@ endef
 
 define install_gettext_translation # (po-file, destination)
 $(eval \
-install-translations:: $(1)
+install:: $(1)
 	@ echo "$(COLOR_INSTALL)Installing PO translation file $(1) in $(2) ...$(COLOR_OFF)"
 	mkdir -p $(2) && $(MSGFMT) $(1) -o $(2)/$(notdir $(1:%.po=%.mo))
-install: install-translations
 )
 endef

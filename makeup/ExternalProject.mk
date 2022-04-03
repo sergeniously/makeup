@@ -37,6 +37,7 @@ $(EPLOG)/$(1).timestamp: $(call get_depends,$(3))
 	@ touch $(EPLOG)/$(1).timestamp
 
 $(1)_TARGET_FILES+=$(EPLOG)/$(1).timestamp
+$(1)_BINARY_FILES+=$(addprefix $(EPBIN)/,$(notdir $(call opt_all,$(3),BINARY:%)))
 
 build-$(1):: configure-$(1)
 configure-$(1):: patch-$(1)
@@ -99,13 +100,16 @@ build-$(1)::
 endef
 
 # Macro install_external_project:
-#  appends a command to install external project on <make install>
-# Example: $(call install_external_project,foo,install libfoo.so $(DESTDIR))
-define install_external_project # (name, command ..., comment ...)
+#  appends a command to install external project @files in @destination on <make install>
+#  where @files are wildcard paths relative to $(EPSRC) directory
+#  if no @files are given it tries to install BINARY:% files provided when external project added
+# Example: $(call install_external_project,foo,build/libfoo.so,$(DESTDIR))
+define install_external_project # (name, [files ...], destination, [MODE:123])
 $(eval \
-install-$(1)::
-	@ echo "$(COLOR_INSTALL)Installing external project: $(1)$(if $(3),($(3)))$(COLOR_OFF)"
-	cd $(EPSRC)/$(1) && ($(2)) >> $(EPLOG)/$(1).log
-install: install-$(1)
+install:: $($(1)_TARGET_FILES)
+	@ echo "$(COLOR_INSTALL)Installing external project $(1) in $(3) ...$(COLOR_OFF)"
+	mkdir -p $(3)
+	$(foreach file,$(or $(addprefix $(EPSRC)/,$(2)),$($(1)_BINARY_FILES)),\
+	install $(call opt_one,$(4),MODE:%,-m %) $(file) $(3)$(NEWLINE)$(TAB))
 )
 endef
