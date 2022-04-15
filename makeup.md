@@ -8,7 +8,15 @@
   - [Built-in targets](#built-in-targets)
   - [Built-in variables](#built-in-variables)
   - [Built-in functions](#built-in-functions)
-    - [find_program](#findprogram)
+    - [find_program](#find_program)
+    - [add_compile_options](#add_compile_options)
+    - [add_definitions](#add_definitions)
+    - [include_directories](#include_directories)
+    - [add_link_options](#add_link_options)
+    - [link_directories](#link_directories)
+    - [link_libraries](#link_libraries)
+    - [add_binary_target](#add_binary_target)
+    - [add_subdir_target](#add_subdir_target)
 
 # Introducing
 
@@ -129,7 +137,7 @@ Contains the absolute path of the current building (binary) directory that respo
 
 ## Built-in functions
 
-Here are some generic functions supported by **makeup**:
+Here are some generic functions supported by **makeup**.
 
 ### find_program
 Searches an executable program by names in specified paths or in default locations specified in system environment variable *$PATH* and returns one found variant.
@@ -146,4 +154,91 @@ Arguments:
 Example:
 ```Makefile
 QMAKE=$(call find_program, qmake, /usr/lib/qt5, REQUIRED)
+```
+
+### add_compile_options
+Appends compile options to COMPILE_OPTIONS variable that is used by modules to compile binary targets.
+
+Example:
+```Makefile
+$(call add_compile_options, -Wall -O2)
+```
+
+### add_definitions
+Appends definitions to COMPILE_OPTIONS variable in NAME[=VALUE] form
+> **Note**: do not add them with -D prefixes as so they added automatically
+
+Example:
+```Makefile
+$(call add_definitions, DEBUG PLATFORM=ANY)
+```
+
+### include_directories
+Adds the given directories to those the compiler uses to search for include files. Relative paths are interpreted as relative to the current source directory. The given directories are added to COMPILE_OPTIONS variable with -I prefixes.
+
+Example:
+```Makefile
+$(call include_directories, /usr/local/include $(EPINC))
+```
+
+### add_link_options
+Appends any options to LINK_OPTIONS variable that is used by modules to perform linking step for binary targets.
+
+Example:
+```Makefile
+$(call add_link_options, -fPIC)
+```
+
+### link_directories
+Adds the paths in which the linker should search for libraries. Relative paths are interpreted as relative to the current source directory. The given paths are added to LINK_OPTIONS variable with -L prefixes.
+
+Example:
+```Makefile
+$(call link_directories, /usr/local/lib $(EPBIN))
+```
+
+### link_libraries
+Specifies libraries or flags to use when linking any targets created later. Also appends current binary path to those which have relative specifier.
+
+Example:
+```Makefile
+$(call link_libraries, boost_system -l:libzip.a ../libany.so)
+```
+
+### add_binary_target
+Universal function to create a binary target file. It is supposed to be used by modules to create executable programs or libraries.
+```
+$(call add_binary_target, name, file, sources ..., comment, command, [options ...])
+```
+Arguments:
+1) **name**: a target name to aggregate target files.
+2) **file**: a basename of a file that will be created in current binary directory.
+3) **sources**: a list of prerequisite source files for target **file**.
+4) **comment**: a comment to print of what is going to be done.
+5) **command**: a command to create binary target **file**.
+6) **options**:
+   - **DEPEND:name ...**: additional dependency for target **file**.
+   - **EXCLUDE_FROM_ALL**: do not add the target to default all target.
+
+Example:
+```Makefile
+$(call add_binary_target,foo,libfoo.a,foo.cpp,Building static library,g++ $$^ -o $$@)
+```
+
+### add_subdir_target
+Appends a target to build, clean, check or install targets in a subdirectory.
+```
+$(call add_subdir_target, name, [options ...])
+```
+Arguments:
+1) **name**: a target name that may be the same as a subdirectory name.
+2) **options**:
+   - **DIR:name**: specify subdirectory name or path if the target **name** must be different from the subdirectory name.
+   - **DEPEND:name ...**: additional dependency for target **name**.
+   - **EXCLUDE_FROM_ALL**: do not add the target to default all target.
+
+Example:
+```Makefile
+$(call add_subdir_target,lib,DIR:src/lib EXCLUDE_FROM_ALL)
+$(call add_subdir_target,bin,DIR:src/bin DEPEND:lib)
 ```
