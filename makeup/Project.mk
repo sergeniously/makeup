@@ -1,7 +1,7 @@
 #####################
 # makeup project file
-# ! This file will be included by makeup.mk to use common variables
-# ! ROOT_*_DIR variables are set in makeup.mk as absolute dirpath to makeup.mk
+# ! This file will be automatically included by makeup.mk
+# ! Place here the project-specific code or leave it empty
 
 PROJECT_NAME=makeup
 PROJECT_VERSION=1.0.0

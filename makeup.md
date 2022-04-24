@@ -39,14 +39,14 @@
 # Quick start
 
 1) Just copy **makeup.mk** kernel file and **makeup** directory to the root of your project.
-2) Optionally create project-related file **makeup.pj** near to makeup.mk and fill it with project-specific variables and options. This file is automatically included in makeup.mk file.
-3) Create Makefile and from inside of it include makeup.mk file.
+2) Optionally modify project file **makeup/Project.mk** filling it with project-specific variables and options. This file is automatically included in makeup.mk file.
+3) Create Makefile and include makeup.mk file from inside of it.
 
 Now, this new Makefile is ready to use all makeup features.
 
 ## Example
 
-Here is an example of Makefile to build a simple C++ program which uses external json library (see demo/Makefile):
+Here is an example of Makefile to build a simple C++ program which uses external json library (see [demo/Makefile](demo/Makefile)):
 ```makefile
 include ../makeup.mk
 $(call makeup_import,Cpp ExternalProject)
