@@ -5,7 +5,7 @@
 # Macro to find Qt applications and libraries and define QT variables to use them
 # Example: $(call find_qt, Core Gui, /usr/lib/qt5)
 define find_qt # (libraries ... [, paths ...])
-$(foreach QMAKE,$(call find_program,qmake,$(2),REQUIRED RECURSIVE),$(eval \
+$(foreach QMAKE,$(call find_program,qmake,$(2:%=PATH:%) REQUIRED RECURSIVE),$(eval \
 QT_VERSION:=$(firstword $(subst ., ,$(shell $(QMAKE) -query QT_VERSION)))
 QT_INCLUDE_DIR:=$(shell $(QMAKE) -query QT_INSTALL_HEADERS)
 QT_LIBRARY_DIR:=$(shell $(QMAKE) -query QT_INSTALL_LIBS)

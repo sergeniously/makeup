@@ -79,20 +79,6 @@ help::
 	$(call help,show-built,Printing all built files for current and subdirectories)
 
 
-# Macro find_program(names ..., paths ..., [REQUIRED] [RECURSIVE])
-#  searches executable @names in @paths or in system $PATH and return one found variant
-#  if REQUIRED option specified and program is not found it generates an error and stops working
-#  if RECURSIVE option specified a program will be searched recursively in @paths (use carefully!)
-# Example: QMAKE=$(call find_program, qmake, /usr/lib/qt5, REQUIRED)
-define find_program
-$(or \
-	$(firstword $(foreach name,$(1),$(foreach path,$(2),\
-		$(shell find $(path) $(if $(filter RECURSIVE,$(3)),,-maxdepth 1) -executable -name $(name) 2>/dev/null)))),\
-	$(firstword $(shell which $(1))),\
-	$(if $(filter REQUIRED,$(3)),
-		$(error Program $(1) is not found)))
-endef
-
 # Macro to join @words with @splitter
 define join_with # (splitter, words)
 $(subst $() $(),$(1),$(strip $(2)))
@@ -151,6 +137,20 @@ endef
 # Example: $(call opt_list, FILES:one;two;tri, FILES:%, cp -f %) -> cp -f one two tri
 define opt_list # (options ..., pattern, [replace])
 $(subst %,$(subst ;, ,$(patsubst $(2),%,$(filter $(2),$(1)))),$(or $(3),%))
+endef
+
+# Macro find_program(names ..., [PATH:dir ...] [REQUIRED] [RECURSIVE])
+#  searches executable @names in @PATH or in system $PATH and return one found variant
+#  if REQUIRED option specified and program is not found it generates an error and stops working
+#  if RECURSIVE option specified a program will be searched recursively in @paths (use carefully!)
+# Example: QMAKE=$(call find_program, qmake, PATH:/usr/lib/qt5 REQUIRED)
+define find_program
+$(or \
+	$(firstword $(foreach name,$1,$(foreach path,$(call opt_all,$2,PATH:%),\
+		$(shell find $(path) $(call opt_not,$2,RECURSIVE,-maxdepth 1) -executable -name $(name) 2>/dev/null)))),\
+	$(firstword $(shell which $1)),\
+	$(if $(filter REQUIRED,$2),
+		$(error Program $1 is not found)))
 endef
 
 # For concise usage below

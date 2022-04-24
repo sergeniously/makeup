@@ -3,11 +3,11 @@
 # implements macros to preprocess embedded Postgres SQL files
 
 define find_postgres
-$(foreach pg_config,$(call find_program,pg_config,,REQUIRED),$(eval \
+$(foreach pg_config,$(call find_program,pg_config,REQUIRED),$(eval \
 POSTGRES_INCLUDE_DIR:=$(shell $(pg_config) --includedir --includedir-server)
 POSTGRES_LIBRARY_DIR:=$(shell $(pg_config) --libdir)
 POSTGRES_LIBRARIES:=ecpg
-ECPG:=$(call find_program,ecpg,,REQUIRED)
+ECPG:=$(call find_program,ecpg,REQUIRED)
 ))
 endef
 

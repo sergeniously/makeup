@@ -142,18 +142,18 @@ Here are some generic functions supported by **makeup**.
 ### find_program
 Searches an executable program by names in specified paths or in default locations specified in system environment variable *$PATH* and returns one found variant.
 ```
-$(call find_program, names ..., [paths ...], [REQUIRED] [RECURSIVE])
+$(call find_program, names ..., [PATH:dir ...] [REQUIRED] [RECURSIVE])
 ```
 Arguments:
 1) **names**: specify one or more possible names for the program.
-2) **paths**: specify directories to search in addition to the default locations.
-3) **options**: 
-    + **REQUIRED**: stop processing with an error message if nothing is found.
-    + **RECURSIVE**: recursively search the program in specified paths (use carefully).
+2) **options**:
+    + **PATH:dir** : specify directories to search in addition to the default locations.
+    + **REQUIRED** : stop processing Makefile with an error message if nothing is found.
+    + **RECURSIVE** : recursively search the program in specified paths (use carefully).
 
 Example:
 ```Makefile
-QMAKE=$(call find_program, qmake, /usr/lib/qt5, REQUIRED)
+QMAKE=$(call find_program, qmake, PATH:/usr/lib/qt5 REQUIRED)
 ```
 
 ### add_compile_options

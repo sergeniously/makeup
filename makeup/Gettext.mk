@@ -5,9 +5,9 @@
 
 define find_gettext
 $(eval \
-XGETTEXT:=$(call find_program,xgettext,,REQUIRED)
-MSGMERGE:=$(call find_program,msgmerge,,REQUIRED)
-MSGFMT:=$(call find_program,msgfmt,,REQUIRED)
+XGETTEXT:=$(call find_program,xgettext,REQUIRED)
+MSGMERGE:=$(call find_program,msgmerge,REQUIRED)
+MSGFMT:=$(call find_program,msgfmt,REQUIRED)
 )
 endef
 
