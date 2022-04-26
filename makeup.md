@@ -39,7 +39,7 @@
 # Quick start
 
 1) Just copy **makeup.mk** kernel file and **makeup** directory to the root of your project.
-2) Optionally modify project file **makeup/Project.mk** filling it with project-specific variables and options. This file is automatically included in makeup.mk file.
+2) Optionally modify project file [**makeup/Project.mk**](makeup/Project.mk) filling it with project-specific variables and options. This file is automatically included in makeup.mk file.
 3) Create Makefile and include makeup.mk file from inside of it.
 
 Now, this new Makefile is ready to use all makeup features.
@@ -109,7 +109,7 @@ Pretending to create makeup configuration in ~/makeup/install/etc ...
 
 + **check** target runs test targets if there are such ones.
 
-+ **show-built** target shows objects and binaries which are built for current source directory and its subdirectories.
++ **built** target shows objects and binaries which are built for current source directory and its subdirectories.
 
 Further details and another Makefile-dependent targets can be shown by `make help` command. Feel free to use it every time you need help.
 
