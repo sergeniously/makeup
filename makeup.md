@@ -39,7 +39,7 @@
 # Quick start
 
 1) Just copy **makeup.mk** kernel file and **makeup** directory to the root of your project.
-2) Optionally modify project file [**makeup/Project.mk**](makeup/Project.mk) filling it with project-specific variables and options. This file is automatically included in makeup.mk file.
+2) Optionally modify [**makeup/Project.mk**](makeup/Project.mk) file filling it with project-specific variables and options. This file is automatically included in makeup.mk file.
 3) Create Makefile and include makeup.mk file from inside of it.
 
 Now, this new Makefile is ready to use all makeup features.
@@ -242,3 +242,5 @@ Example:
 $(call add_subdir_target,lib,DIR:src/lib EXCLUDE_FROM_ALL)
 $(call add_subdir_target,bin,DIR:src/bin DEPEND:lib)
 ```
+
+### To be continued...
