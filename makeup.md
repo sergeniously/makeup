@@ -17,6 +17,9 @@
     - [link_libraries](#link_libraries)
     - [add_binary_target](#add_binary_target)
     - [add_subdir_target](#add_subdir_target)
+    - [add_test_directory](#add_test_directory)
+    - [add_test_program](#add_test_program)
+    - [add_test_command](#add_test_command)
 
 # Introducing
 
@@ -121,16 +124,16 @@ Further details and another Makefile-dependent targets can be shown by `make hel
 Contains an absolute path to the makeup.mk location. It is supposed to be a root directory of a project.
 
 + **ROOT_BINARY_DIR**<br>
-Contains an absolute path of the root directory for building. By default it is set as *<ROOT_SOURCE_DIR>/build*, but can be changed in two ways:
+Contains the absolute path of the root directory for building. By default it is set as *<ROOT_SOURCE_DIR>/build*, but can be changed in two ways:
   + specify *BUILD_DIR* in make command: `make all BUILD_DIR=dir`
-  + override it in project file **makeup.pj**: `ROOT_BINARY_DIR=dir`
+  + override it in [**makeup/Project.mk**](makeup/Project.mk) file: `ROOT_BINARY_DIR=dir`
 
 + **ROOT_INSTALL_DIR**<br>
 Contains an absolute path of the root directory to install target files.
 Default value is *<ROOT_SOURCE_DIR>/install*. Can be changed by specifying INSTALL_DIR or DESTDIR variables in `make install` command.
 
 + **CURRENT_SOURCE_DIR**<br>
-It is a synonym for standard Makefile variable **CURDIR** that is set to the absolute path of the current working (source) directory.
+It is a synonym for the standard Makefile variable **CURDIR** that is set to the absolute path of the current working (source) directory.
 
 + **CURRENT_BINARY_DIR**<br>
 Contains the absolute path of the current building (binary) directory that responds to the current working directory. For example, if the current working directory equals to *ROOT_SOURCE_DIR/demo*, then the current building directory will be *ROOT_BINARY_DIR/demo*. There is also a short form of this variable: **BINDIR**.
@@ -140,7 +143,7 @@ Contains the absolute path of the current building (binary) directory that respo
 Here are some generic functions supported by **makeup**.
 
 ### find_program
-Searches an executable program by names in specified paths or in default locations specified in system environment variable *$PATH* and returns one found variant.
+Searches an executable program by names in specified paths or in default locations specified in system environment variable `$PATH` and returns one found variant.
 ```
 $(call find_program, names ..., [PATH:dir ...] [REQUIRED] [RECURSIVE])
 ```
@@ -208,7 +211,7 @@ $(call link_libraries, boost_system -l:libzip.a ../libany.so)
 ### add_binary_target
 Universal function to create a binary target file. It is supposed to be used by modules to create executable programs or libraries.
 ```
-$(call add_binary_target, name, file, sources ..., comment, command, [options ...])
+$(call add_binary_target, name, file, sources ..., comment, command, [DEPEND:name ...] [EXCLUDE_FROM_ALL])
 ```
 Arguments:
 1) **name**: a target name to aggregate target files.
@@ -217,7 +220,7 @@ Arguments:
 4) **comment**: a comment to print of what is going to be done.
 5) **command**: a command to create binary target **file**.
 6) **options**:
-   - **DEPEND:name ...**: additional dependency for target **file**.
+   - **DEPEND:name**: additional dependency for target **file**.
    - **EXCLUDE_FROM_ALL**: do not add the target to default all target.
 
 Example:
@@ -228,19 +231,43 @@ $(call add_binary_target,foo,libfoo.a,foo.cpp,Building static library,g++ $$^ -o
 ### add_subdir_target
 Appends a target to build, clean, check or install targets in a subdirectory.
 ```
-$(call add_subdir_target, name, [options ...])
+$(call add_subdir_target, name, [DIR:name] [DEPEND:name ...] [EXCLUDE_FROM_ALL])
 ```
 Arguments:
 1) **name**: a target name that may be the same as a subdirectory name.
 2) **options**:
    - **DIR:name**: specify subdirectory name or path if the target **name** must be different from the subdirectory name.
-   - **DEPEND:name ...**: additional dependency for target **name**.
+   - **DEPEND:name**: additional dependency for target **name**.
    - **EXCLUDE_FROM_ALL**: do not add the target to default all target.
 
 Example:
 ```Makefile
 $(call add_subdir_target,lib,DIR:src/lib EXCLUDE_FROM_ALL)
 $(call add_subdir_target,bin,DIR:src/bin DEPEND:lib)
+```
+
+### add_test_directory
+Appends a target to only perform a check target in subdirectory.
+
+Example:
+```Makefile
+$(call add_test_directory,test)
+```
+
+### add_test_program
+Adds a test program to be run by `make check`. The program is supposed to locate in the current binary directory. So the program must be created either directly by [add_binary_target](#add_binary_target) macro or by those macros which use this one, for example, [add_program](#add_program) from **Cpp** module.
+
+Example:
+```Makefile
+$(call add_test_program,test-name,program)
+```
+
+### add_test_command
+Adds a test command line to be run by `make check`.
+
+Example:
+```Makefile
+$(call add_test_command,test-name,valgrind $(CURRENT_BINARY_DIR)/program)
 ```
 
 ### To be continued...
