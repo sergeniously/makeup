@@ -9,7 +9,7 @@ STRIP:=$(or $(STRIP),strip)
 MAKE:=$(or $(MAKE),make)
 
 # Variables for colorful output
-# May be overrided in makeup.pj
+# May be overrided in makeup.mk
 ifeq ($(shell tput colors 2>/dev/null),256)
 COLOR_INFO=\033[01;37m# Bold white
 COLOR_ERROR?=\033[01;31m# Bold red
@@ -72,32 +72,38 @@ endif
 # Extract all values of options with specified @pattern
 # Example: $(call opt_all, FILE:one FILE:two, FILE:%, rm -f %) -> rm -f one two
 define opt_all # (options ..., pattern, [replace])
-$(subst %,$(patsubst $(2),%,$(filter $(2),$(1))),$(or $(3),%))
+$(subst %,$(patsubst $2,%,$(filter $2,$1)),$(or $3,%))
 endef
 
 # Extract the first value of options with specified @pattern
 # Example: $(call opt_one, MODE:123 DIR:any, MODE:%, -m %) -> -m 123
 define opt_one # (options ..., pattern, [replace], [default])
-$(or $(patsubst $(2),$(or $(3),%),$(firstword $(filter $(2),$(1)))),$(4))
+$(or $(patsubst $2,$(or $3,%),$(firstword $(filter $2,$1))),$4)
 endef
 
 # Return @replace string if @pattern is not found in @options
 # Example: $(call opt_not, DIR:one DEPEND:two, EXCLUDE, YES) -> YES
 # Example: $(call opt_not, DEPEND:two EXCLUDE, EXCLUDE, YES) -> 
 define opt_not # (options ..., pattern, replace)
-$(if $(filter $(2),$(1)),,$(3))
+$(if $(filter $2,$1),,$3)
 endef
 
 # Extract all values of options with specified @pattern
 # Example: $(call opt_all, FILE:one FILE:two, FILE:%, --file=%) -> --file=one --file=two
 define opt_each # (options ..., pattern, [replace])
-$(patsubst $(2),$(or $(3),%),$(filter $(2),$(1)))
+$(patsubst $2,$(or $3,%),$(filter $2,$1))
 endef
 
 # Extract lists of values separated by colon from options with specified pattern
 # Example: $(call opt_list, FILES:one;two;tri, FILES:%, cp -f %) -> cp -f one two tri
 define opt_list # (options ..., pattern, [replace])
-$(subst %,$(subst ;, ,$(patsubst $(2),%,$(filter $(2),$(1)))),$(or $(3),%))
+$(subst %,$(subst ;, ,$(patsubst $2,%,$(filter $2,$1))),$(or $3,%))
+endef
+
+# Extract COMMENT:string from options (all underlines in string are replaced with a space)
+# Example: $(call opt_comment,COMMENT:Some_phrase) -> Some phrase
+define opt_comment # (options ..., [default])
+$(subst _, ,$(patsubst COMMENT:%,%,$(filter COMMENT:%,$1)))
 endef
 
 # Macro find_program(names ..., [PATH:dir ...] [REQUIRED] [RECURSIVE])
@@ -137,7 +143,7 @@ endef
 
 # Macro to extract dependency target files or names from a list of options
 define get_depends # (options ...)
-$(foreach name,$(call opt_all,$(1),DEPEND:%),$(or $(call get_targets,$(name)),$(name)))
+$(foreach name,$(call opt_all,$1,DEPEND:%) $(call opt_list,$1,DEPENDS:%),$(or $(call get_targets,$(name)),$(name)))
 endef
 
 # Adds compile options as is
@@ -260,12 +266,12 @@ endef
 
 
 # Macro to include modules from makeup directory
-#  example: $(call makeup_import,ExternalProject Qt)
+#  example: $(call import_modules,ExternalProject Qt)
 # TODO: add second @dir-patterns argument to include modules only for specific sub directories
 #  so that it will be easy to implement different building strategies for specific directories
-#  from within the project makeup.pj file like that:
-#   $(call makeup_import,Cpp,sources/cpp/%)
-#   $(call makeup_import,Qt,sources/cpp/gui/%)
-define makeup_import # (modules ...)
-$(eval include $(1:%=$(ROOT_SOURCE_DIR)/makeup/%.mk))
+#  from within the project makeup.mk file like that:
+#   $(call import_modules,Cpp,sources/cpp/%)
+#   $(call import_modules,Qt,sources/cpp/gui/%)
+define import_modules # (modules ...)
+$(eval include $(1:%=$(MAKEUP_DIR)/%.mk))
 endef

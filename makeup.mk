@@ -1,51 +1,28 @@
-####################
-# makeup kernel file
-# ! This file implements generic logic
+#####################
+# makeup project file
+# ! Include here <[install_dir/]makeup/.mk> file
+# ! Place here the project-specific code or leave it empty
 
-# Detect absolute root path of sources (makeup.mk location)
-ROOT_SOURCE_DIR:=$(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-# Detect absolute root path to build targets
-ROOT_BINARY_DIR:=$(or $(BUILD_DIR),$(ROOT_SOURCE_DIR)/build)
+include makeup/.mk
 
-CURRENT_SOURCE_DIR=$(CURDIR)
-# Detect current binary directory based on current source directory
-CURRENT_BINARY_DIR:=$(ROOT_BINARY_DIR)$(CURDIR:$(ROOT_SOURCE_DIR)%=%)
-# For concise usage according to CURDIR
-BINDIR=$(CURRENT_BINARY_DIR)
+PROJECT_NAME=makeup
+PROJECT_VERSION=1.0.0
+PROJECT_COPYRIGHT=Sergeniously
+PROJECT_URL=https://github.com/sergeniously/makeup
+PROJECT_EMAIL=sergeniously@github.com
 
-# Default install directory
-ROOT_INSTALL_DIR:=$(or $(DESTDIR),$(ROOT_SOURCE_DIR)/install)
+# Uncomment to override directories to download, extract and build external projects
+#EPARC:=$(ROOT_BINARY_DIR)/3rdparty/archives
+#EPSRC:=$(ROOT_BINARY_DIR)/3rdparty/sources
+#EPINC:=$(ROOT_BINARY_DIR)/3rdparty/include
+#EPBIN:=$(ROOT_BINARY_DIR)/3rdparty/binary
+#EPLOG:=$(ROOT_BINARY_DIR)/3rdparty/logs
 
-# Include standard modules independently
-include $(ROOT_SOURCE_DIR)/makeup/Core.mk
-include $(ROOT_SOURCE_DIR)/makeup/Test.mk
-include $(ROOT_SOURCE_DIR)/makeup/Install.mk
-# Include project-specific file if it exists
--include $(ROOT_SOURCE_DIR)/makeup/Project.mk
 
-ifndef VERBOSE
-.SILENT: # suppress display of executed commands
-endif
+# Import Cpp module by default
+$(call import_modules,Cpp)
 
-# Disable built-in rules to avoid circular dependency dropping
-.SUFFIXES: # (if not enough try MAKEFLAGS+=--no-builtin-rules)
-
-# Default target to build when no arguments are given to make
-.DEFAULT_GOAL := all
-
-# No-file targets to build independently
-.PHONY: all check install clean
-
-built: # informative target to print built binaries
-	- find $(CURRENT_BINARY_DIR) -type f 2> /dev/null
-
-$(CURRENT_BINARY_DIR):
-	mkdir -p $@
-
-help::
-	@ echo "Use some of the following commands for current directory:"
-	$(call help,all,Building everything that can be built (default target))
-	$(call help,built,Printing all built files for current and subdirectories)
-	$(call help,check,Running test programs or commands if there are such ones)
-	$(call help,install DESTDIR=dir (default: $(ROOT_INSTALL_DIR)),Installing built target files in DESTDIR directory)
-	$(call help,clean,Deleting everything that was built for current directory)
+# Default compiler options
+$(call set_c_standard,c99)
+$(call set_cxx_standard,c++17)
+$(call add_compile_options,-Wall)

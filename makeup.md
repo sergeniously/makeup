@@ -41,9 +41,10 @@
 
 # Quick start
 
-1) Just copy **makeup.mk** kernel file and **makeup** directory to the root of your project.
-2) Optionally modify [**makeup/Project.mk**](makeup/Project.mk) file filling it with project-specific variables and options. This file is automatically included in makeup.mk file.
-3) Create Makefile and include makeup.mk file from inside of it.
+1) Download these sources of makeup project and run `make install` command from the root.
+2) Create **makeup.mk** file in the root of your project and place the line `include makeup/.mk` in the top of it (see [makeup.mk](makeup.mk)).
+3) Optionally fill **makeup.mk** project file with project-specific variables and options.
+4) Create **Makefile** and include makeup.mk file from inside of it.
 
 Now, this new Makefile is ready to use all makeup features.
 
@@ -52,15 +53,14 @@ Now, this new Makefile is ready to use all makeup features.
 Here is an example of Makefile to build a simple C++ program which uses external json library (see [demo/Makefile](demo/Makefile)):
 ```makefile
 include ../makeup.mk
-$(call makeup_import,Cpp ExternalProject)
+
+# Import module to deal with external sources 
+$(call import_modules,ExternalProject)
 
 # Add, configure and build external project
-$(call add_external_project,az-json,\
-	https://github.com/sergeniously/az-json/archive/refs/heads/master.zip,\
-	MD5:d4d87ba48c545a9d3ccdf582610b874d \
-	INCLUDE:az-json-master/headers \
-	BINARY:build/sources/libaz-json.a)
-$(call configure_external_project,az-json,cmake -S az-json-master -B build)
+$(call add_external_project,az-json,INCLUDE:headers BINARY:build/sources/libaz-json.a)
+$(call clone_external_project,az-json,git@github.com:sergeniously/az-json.git,BRANCH:master)
+$(call configure_external_project,az-json,cmake -B build)
 $(call build_external_project,az-json,make -C build)
 
 # Link external project to program
@@ -68,8 +68,8 @@ $(call include_directories,$(EPINC))
 $(call link_directories,$(EPBIN))
 $(call link_libraries,az-json)
 
-# Add program dependent of az-json library
-$(call add_program,makeup, main.cpp, DEPEND:az-json)
+# Build program
+$(call add_program,makeup,main.cpp,DEPEND:az-json)
 
 # Install external project and program
 $(call install_external_project,az-json,,$(ROOT_INSTALL_DIR)/usr/local/lib)
