@@ -8,14 +8,9 @@ help:
 	@echo "Run <make project DIR=project/dir> to create a project file"
 
 install:
-	@test -e $(INSTALL_DIR)/makeup && echo "makeup is already installed" || \
-		{ @echo "Installing makeup components into the system..."; \
-		  sudo ln -fs $(abspath makeup) $(INSTALL_DIR)/makeup; }
+	@echo "Installing makeup to the default location..."
+	@sudo ln -Fish $(abspath makeup) $(INSTALL_DIR)/makeup
 
 project:
-	@test -e $(INSTALL_DIR)/makeup || { echo "makeup is not yet installed"; false; }
-	@$(if $(DIR),echo "Creating makeup project file $(DIR)/makeup.mk ...",echo "You must specify DIR variable"; false)
-	@test -f $(DIR)/makeup.mk && rm -f $(DIR)/makeup.mk || mkdir -p $(DIR)
-	@echo "#####################" >> $(DIR)/makeup.mk
-	@echo "# makeup project file" >> $(DIR)/makeup.mk
-	@echo "include makeup/.mk" >> $(DIR)/makeup.mk
+	@$(if $(DIR),echo "Creating makeup project file $(DIR)/makeup.mk ...",echo "You must specify DIR variable" && false)
+	@mkdir -p $(DIR) && cp -f $(CURDIR)/makeup.pj $(DIR)/makeup.mk

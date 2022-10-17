@@ -41,7 +41,7 @@
 
 # Quick start
 
-1) Download these sources of makeup project and run `make install` command from the root.
+1) Download these sources of makeup project and copy [makeup](makeup) directory to the one of following directories: `/usr/local/include`, `/usr/include` or `/usr/gnu/include`. Or better run `make install` command from the root directory of sources (it will automatically install makeup to the one of those directories).
 2) Create **makeup.mk** file in the root of your project and place the line `include makeup/.mk` in the top of it (see [makeup.mk](makeup.mk)).
 3) Optionally fill **makeup.mk** project file with project-specific variables and options.
 4) Create **Makefile** and include makeup.mk file from inside of it.
