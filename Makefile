@@ -1,11 +1,15 @@
 
-.PHONY: help install project
+.PHONY: help demo install project
 
 INSTALL_DIR=/usr/local/include
 
 help:
 	@echo "Run <make install> to instal makeup to the default location"
 	@echo "Run <make project DIR=project/dir> to create a project file"
+	@echo "Run <make demo> to build demo project in the demo directory"
+
+demo:
+	@make -C demo
 
 install:
 	@echo "Installing makeup to the default location..."
