@@ -4,11 +4,11 @@
 
 # Directories to download, extract and build external projects
 # Should be defined in project makeup.mk file
-EPARC?=$(ROOT_BINARY_DIR)/EP/archives
-EPSRC?=$(ROOT_BINARY_DIR)/EP/sources
-EPINC?=$(ROOT_BINARY_DIR)/EP/include
-EPBIN?=$(ROOT_BINARY_DIR)/EP/binary
-EPLOG?=$(ROOT_BINARY_DIR)/EP/logs
+EPARC?=$(ROOT_BINARY_DIR)/ep/archives
+EPSRC?=$(ROOT_BINARY_DIR)/ep/sources
+EPINC?=$(ROOT_BINARY_DIR)/ep/include
+EPBIN?=$(ROOT_BINARY_DIR)/ep/binary
+EPLOG?=$(ROOT_BINARY_DIR)/ep/logs
 
 help::
 	$(call help,source EPSRC=dir (default: $(EPSRC)),\

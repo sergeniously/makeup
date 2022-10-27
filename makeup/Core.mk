@@ -202,6 +202,8 @@ $(call add_sources,$(3))
 -include $(DEPEND_FILES)
 
 $(2): $(BINDIR)/$(2)
+	@ echo "$(COLOR_INSTALL)Target $2 is 100% built$(COLOR_OFF)"
+
 $(BINDIR)/$(2): $(OBJECT_FILES) $(call get_depends,$(6))
 	@ echo "$(COLOR_BUILD)$(or $(4),Building binary file): $$@$(COLOR_OFF)"
 	$(or $(5),$(error command is not provided for $(1)))

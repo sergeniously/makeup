@@ -13,7 +13,7 @@ demo:
 
 install:
 	@echo "Installing makeup to the default location..."
-	@sudo ln -Fish $(abspath makeup) $(INSTALL_DIR)/makeup
+	@sudo ln -Fisn $(abspath makeup) $(INSTALL_DIR)/makeup
 
 project:
 	@$(if $(DIR),echo "Creating makeup project file $(DIR)/makeup.mk ...",echo "You must specify DIR variable" && false)
