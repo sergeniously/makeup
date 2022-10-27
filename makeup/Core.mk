@@ -91,7 +91,7 @@ endef
 # Extract all values of options with specified @pattern
 # Example: $(call opt_all, FILE:one FILE:two, FILE:%, --file=%) -> --file=one --file=two
 define opt_each # (options ..., pattern, [replace])
-$(patsubst $2,$(or $3,%),$(filter $2,$1))
+$(foreach word,$(patsubst $2,%,$(filter $2,$1)),$(subst %,$(word),$(or $3,%)))
 endef
 
 # Extract lists of values separated by colon from options with specified pattern
@@ -169,7 +169,7 @@ endef
 
 # Macro to add directories to search libraries by linker
 define link_directories # (paths ...)
-$(eval LINK_OPTIONS+=$(1:%=-L%) -Wl,-rpath,$(subst $() $(),:,$(1)))
+$(eval LINK_OPTIONS+=$(foreach path,$1,-L$(path) -Wl,-rpath,$(path)))
 endef
 
 # Macro to link libraries or options
