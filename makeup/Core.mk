@@ -18,6 +18,7 @@ COLOR_COMPILE?=\033[0;32m# Plain green
 COLOR_PREPROCESS?=\033[0;33m# Plain yellow
 COLOR_DEPENDENCY?=\033[01;35m# Bold purple
 COLOR_EXTERNAL?=\033[01;34m# Bold blue
+COLOR_PACKAGE?=\033[01;35m# Bold purple
 COLOR_INSTALL?=\033[01;37m# Bold white
 COLOR_TEST?=\033[0;36m# Plain cyan
 COLOR_OFF:=\033[0m
