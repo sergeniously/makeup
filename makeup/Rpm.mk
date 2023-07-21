@@ -28,7 +28,7 @@ $(eval \
 $1-rpm-build:
 	$(call package_comment,rpm,Generating $1 package: $2 ...)
 	mkdir -p $(RPM_DIR)/$1/BUILD $(RPM_DIR)/$1/RPMS/$(RPM_PACKAGE_ARCHITECTURE)
-	$(RPM_APP) --verbose -bb --target=$(RPM_PACKAGE_ARCHITECTURE) --define="_build_pkgcheck_set %{nil}" \
+	$$(RPM_APP) --verbose -bb --target=$(RPM_PACKAGE_ARCHITECTURE) --define="_build_pkgcheck_set %{nil}" \
 		--define="_allow_root_build 1" --define="_topdir $(RPM_DIR)/$1" --buildroot=$(RPM_DIR)/$1/BUILDROOT \
 		$(RPM_DIR)/$1/spec $(if $(VERBOSE),,> $(RPM_DIR)/$1/log 2>&1)
 	mv -f $(RPM_DIR)/$1/RPMS/$(RPM_PACKAGE_ARCHITECTURE)/*.rpm $2
@@ -109,7 +109,7 @@ endef
 #  @mode, @user, @group: see rpm_package_files_list
 # Example: $(call rpm_package_files_find,package,$(INSTALL_DIR))
 define rpm_package_files_find
-$(call rpm_package_files_list,$1,$(subst $2,,$(shell find $2 -type f)),$3,$4,$5)
+$(call rpm_package_files_list,$1,$(subst $2,,$(and $(wildcard $2),$(shell find $2 -type f))),$3,$4,$5)
 endef
 
 # Private macro to provide install command for rpm package.

@@ -22,9 +22,16 @@ BINDIR=$(CURRENT_BINARY_DIR)
 ROOT_INSTALL_DIR:=$(or $(DESTDIR),$(ROOT_SOURCE_DIR)/install)
 
 # Include standard modules independently
+include $(MAKEUP_DIR)/Opt.mk
 include $(MAKEUP_DIR)/Core.mk
 include $(MAKEUP_DIR)/Test.mk
 include $(MAKEUP_DIR)/Install.mk
+
+# Detect verbosity by a special target
+ifneq ($(filter verbose,$(MAKECMDGOALS)),)
+verbose: $(or $(filter-out verbose,$(MAKECMDGOALS)),all)
+export VERBOSE=1
+endif
 
 ifndef VERBOSE
 .SILENT: # suppress display of executed commands

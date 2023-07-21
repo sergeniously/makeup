@@ -70,41 +70,13 @@ $(shell echo "$(1)" | tr [A-Z] [a-z])
 endef
 endif
 
-# Extract all values of options with specified @pattern
-# Example: $(call opt_all, FILE:one FILE:two, FILE:%, rm -f %) -> rm -f one two
-define opt_all # (options ..., pattern, [replace])
-$(subst %,$(patsubst $2,%,$(filter $2,$1)),$(or $3,%))
-endef
-
-# Extract the first value of options with specified @pattern
-# Example: $(call opt_one, MODE:123 DIR:any, MODE:%, -m %) -> -m 123
-define opt_one # (options ..., pattern, [replace], [default])
-$(or $(patsubst $2,$(or $3,%),$(firstword $(filter $2,$1))),$4)
-endef
-
-# Return @replace string if @pattern is not found in @options
-# Example: $(call opt_not, DIR:one DEPEND:two, EXCLUDE, YES) -> YES
-# Example: $(call opt_not, DEPEND:two EXCLUDE, EXCLUDE, YES) -> 
-define opt_not # (options ..., pattern, replace)
-$(if $(filter $2,$1),,$3)
-endef
-
-# Extract all values of options with specified @pattern
-# Example: $(call opt_all, FILE:one FILE:two, FILE:%, --file=%) -> --file=one --file=two
-define opt_each # (options ..., pattern, [replace])
-$(foreach word,$(patsubst $2,%,$(filter $2,$1)),$(subst %,$(word),$(or $3,%)))
-endef
-
-# Extract lists of values separated by colon from options with specified pattern
-# Example: $(call opt_list, FILES:one;two;tri, FILES:%, cp -f %) -> cp -f one two tri
-define opt_list # (options ..., pattern, [replace])
-$(subst %,$(subst ;, ,$(patsubst $2,%,$(filter $2,$1))),$(or $3,%))
-endef
-
-# Extract COMMENT:string from options (all underlines in string are replaced with a space)
-# Example: $(call opt_comment,COMMENT:Some_phrase) -> Some phrase
-define opt_comment # (options ..., [default])
-$(subst _, ,$(patsubst COMMENT:%,%,$(filter COMMENT:%,$1)))
+# Macro to check if @left value equals to @right value
+#  gives @true string if equals and @false string otherwise
+# Examples:
+#  $(call equal,one,two) -> false
+#  $(call equal,one,one,yes,no) -> yes
+define equal # (left,right,[true],[false])
+$(if $(or $(subst $2,,$1),$(subst $1,,$2)),$(or $4,false),$(or $3,true))
 endef
 
 # Macro find_program(names ..., [PATH:dir ...] [REQUIRED] [RECURSIVE])

@@ -36,7 +36,7 @@ define deb_package_add
 $(eval \
 $1-deb-build:
 	$(call package_comment,deb,Generating $1 package: $2 ...)
-	cd $(DEB_DIR)/$1 && DEB_BUILD_OPTIONS="$(DEB_BUILD_OPTIONS)" fakeroot $(DEB_APP) binary \
+	cd $(DEB_DIR)/$1 && DEB_BUILD_OPTIONS="$(DEB_BUILD_OPTIONS)" fakeroot $$(DEB_APP) binary \
 		$(if $(VERBOSE),,> $(DEB_DIR)/$1/log 2>&1)
 
 $1-deb-configuration:

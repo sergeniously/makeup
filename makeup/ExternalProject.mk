@@ -68,13 +68,19 @@ help::
 )
 endef
 
+# Internal macro to generate a command to print a colorful message for the external project
+# Usage: $(call print_external_project,name,message,options)
+define print_external_project
+@ echo "$(COLOR_EXTERNAL)$2: $1$(call opt_comment,$3, (%))$(COLOR_OFF)"
+endef
+
 # Macro adds a target to clone sources from a remote git repository @url
 #   @BRANCH:name: specifies a name of a specific branch for a git repository to be cloned
 #   @COMMIT:hash: specifies a hash of a specific commit for a git repository to be checked out
-define clone_external_project # (name, url, [BRANCH:name] [COMMIT:hash])
+define clone_external_project # (name, url, [BRANCH:name] [COMMIT:hash] [COMMENT:"..."])
 $(eval \
 source-$1::
-	@ echo "$(COLOR_EXTERNAL)Cloning external project: $1$(COLOR_OFF)"
+	$(call print_external_project,$1,Cloning external project,$3)
 	git clone $(call opt_one,$3,BRANCH:%,--branch=%) $2 $(EPSRC)/$1 >> $(EPLOG)/$1.log 2>&1
 	$(call opt_one,$3,COMMIT:%,(cd $(EPSRC)/$1 && git checkout %) >> $(EPLOG)/$1.log 2>&1)
 )
@@ -83,10 +89,10 @@ endef
 # Macro adds a target to download and extract an archive with sources from @url
 #   @MD5:hash: specifies MD5 checksum to verify the archive file after downloading
 #   @STRIP:number: see extract_external_project options
-define download_external_project # (name, url, [MD5:hash] [STRIP:number])
+define download_external_project # (name, url, [MD5:hash] [STRIP:number] [COMMENT:"..."])
 $(eval \
 source-$1::
-	@ echo "$(COLOR_EXTERNAL)Downloading external project: $1$(COLOR_OFF)"
+	$(call print_external_project,$1,Downloading external project,$3)
 	$(if $(shell command -v curl),curl --output $(EPARC)/$(notdir $2) --location $2 >> $(EPLOG)/$1.log 2>&1)
 	$(if $(shell command -v wget),wget -nv --timestamping --directory-prefix=$(EPARC) --output-file=$(EPLOG)/$1.log $2)
 	$(call opt_one,$3,MD5:%,echo %\ \ $(EPARC)/$(notdir $2) | md5sum --check >> $(EPLOG)/$1.log 2>&1)
@@ -99,10 +105,10 @@ endef
 
 # Macro adds a target to extract sources from existing archive @file
 #   @STRIP:number: remove the specified number of leading path elements
-define extract_external_project # (name, file, [STRIP:number])
+define extract_external_project # (name, file, [STRIP:number] [COMMENT:"..."])
 $(eval \
 source-$1::
-	@ echo "$(COLOR_EXTERNAL)Extracting external project: $1$(COLOR_OFF)"
+	$(call print_external_project,$1,Extracting external project,$3)
 	$(call opt_one,$2,%.tar.gz,tar --extract --file=%.tar.gz --directory=$(EPSRC)/$1 $(call opt_one,$3,STRIP:%,--strip-components=%))
 	$(call opt_one,$2,%.zip,unzip -q -d $(EPSRC)/$1 %.zip $(call opt_one,$3,STRIP:%,&& echo "STRIP:% option is unavailable for zip"))
 )
@@ -111,10 +117,10 @@ endef
 # Macro patch_external_project:
 #  appends a command to patch external project
 # Example: $(call patch_external_project,foo,patch main.coo foo.patch)
-define patch_external_project # (name, command ..., comment ...)
+define patch_external_project # (name, command ..., [COMMENT:"..."])
 $(eval \
 patch-$1::
-	@ echo "$(COLOR_EXTERNAL)Patching external project: $1$(if $3,($3))$(COLOR_OFF)"
+	$(call print_external_project,$1,Patching external project,$3)
 	cd $(EPSRC)/$1 && ($2) >> $(EPLOG)/$1.log 2>&1
 )
 endef
@@ -122,10 +128,10 @@ endef
 # Macro configure_external_project:
 #  appends a command to configure external project
 # Example: $(call configure_external_project,foo,./configure)
-define configure_external_project # (name, command ..., comment ...)
+define configure_external_project # (name, command ..., [COMMENT:"..."])
 $(eval \
 configure-$1::
-	@ echo "$(COLOR_EXTERNAL)Configuring external project: $1$(if $3,($3))$(COLOR_OFF)"
+	$(call print_external_project,$1,Configuring external project,$3)
 	cd $(EPSRC)/$1 && ($2) >> $(EPLOG)/$1.log 2>&1
 )
 endef
@@ -133,10 +139,10 @@ endef
 # Macro build_external_project:
 #  appends a command to build external project
 # Example: $(call build_external_project,foo,make all)
-define build_external_project # (name, command ..., comment ...)
+define build_external_project # (name, command ..., [COMMENT:"..."])
 $(eval \
 build-$1::
-	@ echo "$(COLOR_EXTERNAL)Building external project: $1$(if $3,($3))$(COLOR_OFF)"
+	$(call print_external_project,$1,Building external project,$3)
 	cd $(EPSRC)/$1 && ($2) >> $(EPLOG)/$1.log 2>&1
 )
 endef
