@@ -34,7 +34,7 @@ $1-rpm-build:
 	mv -f $(RPM_DIR)/$1/RPMS/$(RPM_PACKAGE_ARCHITECTURE)/*.rpm $2
 
 $1-rpm-configuration:
-	$(call package_comment,rpm,Generating specification file for $1;)
+	# Generating specification file for $1
 	printf "%s\n" 'Name: $1' \
 		'Version: $(RPM_PACKAGE_VERSION)' \
 		'Release: $(RPM_PACKAGE_RELEASE)' \
@@ -54,7 +54,7 @@ $1-rpm-configuration:
 			(printf "\n%%%s\n" $$(notdir $$(specfile)) && cat $$(specfile)) >> $(RPM_DIR)/$1/spec$$(NEWLINE)$$(TAB))
 
 $1-rpm-configure::
-	$(call package_comment,rpm,Generating changelog for $1;)
+	# Generating changelog for $1
 	printf "* %s %s <%s>\n" '$(RPM_PACKAGE_DATETIME)' '$(RPM_PACKAGE_VENDOR)' '$(PACKAGE_EMAIL)' \
 		>> $(RPM_DIR)/$1/specs/changelog
 	printf "%s\n" $(subst '',,'$(subst *,' '-,$(PACKAGE_CHANGES))') \
@@ -78,7 +78,7 @@ endef
 define rpm_package_specify
 $(eval \
 $1-rpm-configure::
-	$(call package_comment,rpm,Specifying $2 directive for $1;)
+	# Specifying $2 directive for $1
 	printf "%s\n" '$3' > $(RPM_DIR)/$1/specs/$(strip $2)
 )
 endef
@@ -95,7 +95,7 @@ endef
 define rpm_package_files_list
 $(eval \
 $1-rpm-configure::
-	$(call package_comment,rpm,Specifying files directive for $1;)
+	# Specifying files directive for $1
 	printf "$(if $3$4$5,%%attr($(or $3,-), $(or $4,-), $(or $5,-)) )%s\n" $2 \
 		>> $(RPM_DIR)/$1/specs/files
 )

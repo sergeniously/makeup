@@ -40,7 +40,7 @@ $1-deb-build:
 		$(if $(VERBOSE),,> $(DEB_DIR)/$1/log 2>&1)
 
 $1-deb-configuration:
-	$(call package_comment,deb,Generating control file for $1;)
+	# Generating control file for $1
 	printf "%s\n" \
 		'Source: $1' \
 		'Section: $(DEB_PACKAGE_SECTION)' \
@@ -56,7 +56,7 @@ $1-deb-configuration:
 			> $(DEB_DIR)/$1/debian/control
 
 $1-deb-configure::
-	$(call package_comment,deb,Generating configuration files for $1;)
+	# Generating initial configuration files for $1
 	printf "#!/usr/bin/make -f\n\n$(if $(VERBOSE),export DH_VERBOSE=1\n\n)%%:\n\tdh \$$$$@\n\n" \
 		>> $(DEB_DIR)/$1/debian/rules
 	printf "override_dh_builddeb:\n\tdh_builddeb --filename=$(notdir $2) --destdir=$(PACKAGE_DIR)\n\n" \
@@ -94,7 +94,7 @@ endef
 define deb_package_override
 $(eval \
 $1-deb-configure::
-	$(call package_comment,deb,Overriding $2 rule$(if $(word 2,$2),s) for $1;)
+	# Overriding $2 rule$(if $(word 2,$2),s) for $1
 	printf "$(2:%=override_dh_%):\n$(if $3,\t$3\n)\n" >> $(DEB_DIR)/$1/debian/rules
 )
 endef

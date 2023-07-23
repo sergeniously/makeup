@@ -1,5 +1,11 @@
-#####################
-# makeup include file
+#      MAKEUP     |\
+#   build system  | \
+#  ___________ ___|__\  
+# |           |   |
+# |   |   |   |   |
+# |   |   |   |   |
+# |___|___|_______|
+#
 # ! This file implements initial logic of makeup
 # ! Must be included in a project makeup.mk file
 

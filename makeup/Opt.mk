@@ -5,8 +5,12 @@
 
 # Extract all values of options with specified @pattern
 # Example: $(call opt_all, FILE:one FILE:two, FILE:%, rm -f %) -> rm -f one two
-define opt_all # (options ..., pattern, [replace], [default])
-$(or $(subst %,$(patsubst $2,%,$(filter $2,$1)),$(or $3,%)),$4)
+# FIXME: default value is not used!
+#define opt_all # (options ..., pattern, [replace], [default])
+#$(or $(subst %,$(patsubst $2,%,$(filter $2,$1)),$(or $3,%)),$4)
+#endef
+define opt_all # (options ..., pattern, [replace])
+$(patsubst $(2),$(or $(3),%),$(filter $(2),$(1)))
 endef
 
 # Extract the first value of options with specified @pattern
